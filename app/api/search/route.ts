@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { searchPDFs } from '../../services/google-search';
-import { createClient } from '@/supabase/server';
+import { createClient } from '../../../supabase/server';
 
 export async function POST(request: Request) {
   try {

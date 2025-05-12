@@ -1,11 +1,11 @@
 'use client'
-
-import { GradeDropdown } from '@/components/GradeDropdown';
-import { SearchBar } from '@/components/SearchBar';
+import React from 'react';
+import { GradeDropdown } from '../components/GradeDropdown';
+import { SearchBar } from '../components/SearchBar';
 import { useEffect, useState } from 'react';
-import { SearchResults } from '@/components/SearchResults';
+import { SearchResults } from '../components/SearchResults';
 import { GoogleSearchResult } from './services/google-search';
-import { Grade } from '@/types';
+import { Grade } from '../types';
 
 export default function Home() {
   const [selectedGrade, setSelectedGrade] = useState<Grade>(Grade.ALL);

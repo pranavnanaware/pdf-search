@@ -1,6 +1,7 @@
-import { GoogleSearchResult } from '@/app/services/google-search';
+import { GoogleSearchResult } from '../app/services/google-search';
 import { FileText } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
+import React from 'react';
 import { useEffect, useState } from 'react';
 
 // PagesPill component

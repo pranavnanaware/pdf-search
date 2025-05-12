@@ -1,5 +1,6 @@
+import React from 'react';
 import { ChevronDown } from 'lucide-react';
-import { GradeOption, Grade } from '@/types';
+import { GradeOption, Grade } from '../types';
 
 const gradeOptions: GradeOption[] = [
   { id: 0, label: "All Grades", value: Grade.ALL },

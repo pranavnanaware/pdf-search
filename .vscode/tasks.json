@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "debug:worker",
+			"group": "rebuild",
+			"problemMatcher": [],
+			"label": "npm: debug:worker",
+			"detail": "node --inspect-brk app/workers/pdf-worker.js"
+		}
+	]
+}

@@ -1,4 +1,5 @@
 import { Search, History } from 'lucide-react';
+import React from 'react';
 import { useState, useRef } from 'react';
 
 interface SearchHistoryProps {

@@ -12,7 +12,7 @@ export type SearchResultType = {
 
 export enum Grade {
   ALL = 'all',
-  KINDERGARTEN = 'K',
+  KINDERGARTEN = 'k',
   GRADE_1 = '1',
   GRADE_2 = '2',
   GRADE_3 = '3',
@@ -24,11 +24,11 @@ export enum Grade {
   GRADE_9 = '9',
   GRADE_10 = '10',
   GRADE_11 = '11',
-  GRADE_12 = '12',
+  GRADE_12 = '12'
 }
 
-export type GradeOption = {
+export interface GradeOption {
   id: number;
   label: string;
   value: Grade;
-};
+}

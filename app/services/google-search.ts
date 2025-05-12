@@ -1,4 +1,4 @@
-import { extractDocText } from "./chunk-docs";
+import {  testPdfProcessing } from "./chunk-docs";
 
 export interface GoogleSearchResult {
   title: string;
@@ -78,8 +78,6 @@ export async function searchPDFs(query: string, grade?: string): Promise<GoogleS
       ...result,
       index
     }));
-
-    const pdfs = await extractDocText(allResults, searchQuery)
   
     return allResults;
   } catch (error) {
