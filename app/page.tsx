@@ -4,8 +4,9 @@ import { GradeDropdown } from '../components/GradeDropdown';
 import { SearchBar } from '../components/SearchBar';
 import { useEffect, useState } from 'react';
 import { SearchResults } from '../components/SearchResults';
-import { GoogleSearchResult } from './services/google-search';
+import { GoogleSearchResult } from './types/stream';
 import { Grade } from '../types';
+import { StreamResponse } from './types/stream';
 
 export default function Home() {
   const [selectedGrade, setSelectedGrade] = useState<Grade>(Grade.ALL);
@@ -14,6 +15,7 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<GoogleSearchResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<{ query: string; filter: string }[]>([]);
+  const [processingStatus, setProcessingStatus] = useState<string | null>(null);
   
   useEffect(() => {
     fetchSearchHistory();
@@ -35,15 +37,18 @@ export default function Home() {
     
     setIsLoading(true);
     setError(null);
+    setProcessingStatus('Searching for PDFs...');
+    setSearchResults([]);
     
     try {
-      const response = await fetch('/api/search', {
+      const response = await fetch('/api/stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
           query,
+          document_links: [], // We'll get these from the search results
           grade: selectedGrade !== Grade.ALL ? selectedGrade : undefined
         }),
       });
@@ -52,8 +57,57 @@ export default function Home() {
         throw new Error('Search failed');
       }
 
-      const data = await response.json();
-      setSearchResults(data.results);
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const text = decoder.decode(value);
+        const messages = text.split('\n').filter(Boolean);
+
+        for (const message of messages) {
+          const data: StreamResponse = JSON.parse(message);
+          
+          switch (data.status) {
+            case 'processing':
+              setProcessingStatus(data.message);
+              break;
+            case 'completed':
+              if (data.data?.searchResults) {
+                setSearchResults(data.data.searchResults);
+                // Update the request with the document links
+                const documentLinks = data.data.searchResults.map(r => r.link);
+                // Start processing the documents
+                processDocuments(query, documentLinks);
+              } else if (data.data?.relevancyReport) {
+                // Update the relevancy information for the processed document
+                setSearchResults(prev => prev.map(result => 
+                  result.link === data.data?.link
+                    ? { ...result, relevancyReport: data.data.relevancyReport }
+                    : result
+                ));
+              }
+              break;
+            case 'error':
+              // Remove the document that failed to process
+              if (data.data?.link) {
+                setSearchResults(prev => prev.filter(result => result.link !== data.data?.link));
+                console.log(`Removed failed document: ${data.data.link}`);
+              } else {
+                // Only show errors for the overall search process, not individual documents
+                setError(data.error || 'An error occurred');
+              }
+              break;
+          }
+        }
+      }
+
       // Refresh search history after successful search
       fetchSearchHistory();
     } catch (err) {
@@ -61,6 +115,70 @@ export default function Home() {
       console.error('Search error:', err);
     } finally {
       setIsLoading(false);
+      setProcessingStatus(null);
+    }
+  };
+
+  const processDocuments = async (query: string, documentLinks: string[]) => {
+    try {
+      const response = await fetch('/api/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          query,
+          document_links: documentLinks
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Document processing failed');
+      }
+
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const text = decoder.decode(value);
+        const messages = text.split('\n').filter(Boolean);
+
+        for (const message of messages) {
+          const data: StreamResponse = JSON.parse(message);
+          
+          switch (data.status) {
+            case 'processing':
+              setProcessingStatus(data.message);
+              break;
+            case 'completed':
+              if (data.data?.relevancyReport) {
+                // Update the relevancy information for the processed document
+                setSearchResults(prev => prev.map(result => 
+                  result.link === data.data?.link
+                    ? { ...result, relevancyReport: data.data.relevancyReport }
+                    : result
+                ));
+              }
+              break;
+            case 'error':
+              // Remove the document that failed to process
+              if (data.data?.link) {
+                setSearchResults(prev => prev.filter(result => result.link !== data.data?.link));
+                console.log(`Removed failed document: ${data.data.link}`);
+              }
+              break;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error processing documents:', err);
     }
   };
 
@@ -98,7 +216,7 @@ export default function Home() {
         {isLoading && (
           <div className="text-center py-4">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Searching...</p>
+            <p className="mt-2 text-gray-600">{processingStatus || 'Searching...'}</p>
           </div>
         )}
         

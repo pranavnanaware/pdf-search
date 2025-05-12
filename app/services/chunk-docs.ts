@@ -49,7 +49,7 @@ async function fetchPdfBuffer(url: string) {
 
 // 2) Quick page-count check
 async function getPdfPageCount(buffer: Buffer) {
-  const pdfDoc = await PDFDocument.load(buffer);
+  const pdfDoc = await PDFDocument.load(buffer, {ignoreEncryption: true});
   return pdfDoc.getPageCount();
 }
 

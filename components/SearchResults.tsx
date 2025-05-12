@@ -1,4 +1,4 @@
-import { GoogleSearchResult } from '../app/services/google-search';
+import { GoogleSearchResult } from '../app/types/stream';
 import { FileText } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
 import React from 'react';
@@ -27,59 +27,59 @@ const RelevancyInfo = ({ totalPages, relevantPages }: { totalPages: number; rele
   const range = relevantPages.endPage - relevantPages.startPage + 1;
   if (range === totalPages) {
     return (
-      <div className="text-sm text-gray-500 mt-2">
+      <div className="text-sm text-gray-800 mt-2">
         All pages are relevant
       </div>
     );
   }
 
   return (
-    <div className="text-sm text-gray-500 mt-2">
-      {range} relevant pages from page {relevantPages.startPage} - {relevantPages.endPage}
+    <div className="text-sm text-gray-800 mt-2">
+      {range == 1 ? `Page ${relevantPages.startPage} is relevant` : `Pages ${relevantPages.startPage} - ${relevantPages.endPage} are relevant`}
     </div>
   );
 };
 
 // Individual search result component
-const SearchResult = ({ link, title, snippet, fileSize, lastModified }: GoogleSearchResult) => {
+const SearchResult = ({ link, title, snippet, relevancyReport }: GoogleSearchResult) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageCount, setPageCount] = useState<number | null>(null);
-    async function generatePreview() {
-      try {
-        setIsLoading(true);
-        setError(null);
+  const [fileSize, setFileSize] = useState<string | null>(null);
 
-        // Fetch the PDF through our proxy
-        const proxyUrl = `/api/pdf-proxy?url=${encodeURIComponent(link)}`;
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('Failed to fetch PDF');
-        const pdfBytes = await response.arrayBuffer();
+  async function generatePreview() {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-        // Load the PDF
-        const pdfDoc = await PDFDocument.load(pdfBytes);
-        
-        
-        // Create a new PDF with just the first page
-        const previewDoc = await PDFDocument.create();
-        const [firstPage] = await previewDoc.copyPages(pdfDoc, [0]);
-        previewDoc.addPage(firstPage);
+      // Fetch the PDF through our proxy
+      const proxyUrl = `/api/pdf-proxy?url=${encodeURIComponent(link)}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) throw new Error('Failed to fetch PDF');
+      const pdfBytes = await response.arrayBuffer();
+      
 
+      // Load the PDF
+      const pdfDoc = await PDFDocument.load(pdfBytes, {ignoreEncryption: true});
+      // Create a new PDF with just the first page
+      const previewDoc = await PDFDocument.create();
+      const [firstPage] = await previewDoc.copyPages(pdfDoc, [0]);
+      previewDoc.addPage(firstPage);
 
-        // Convert to blob and create URL
-        const previewBytes = await previewDoc.save();
-        const blob = new Blob([previewBytes], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        setPageCount(pdfDoc.getPageCount());
-        setPreviewUrl(url);
-      } catch (err) {
-        console.error('Error generating preview:', err);
-        setError('Preview not available');
-      } finally {
-        setIsLoading(false);
-      }
+      // Convert to blob and create URL
+      const previewBytes = await previewDoc.save();
+      const blob = new Blob([previewBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      setPageCount(pdfDoc.getPageCount());
+      setPreviewUrl(url);
+    } catch (err) {
+      console.error('Error generating preview:', err);
+      setError('Preview not available');
+    } finally {
+      setIsLoading(false);
     }
+  }
 
   useEffect(() => {
     generatePreview();
@@ -139,12 +139,8 @@ const SearchResult = ({ link, title, snippet, fileSize, lastModified }: GoogleSe
         {snippet && snippet !== 'No description available' && (
           <p className="text-sm text-gray-600 mb-3 line-clamp-2">{snippet}</p>
         )}
-        <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-          <div className="flex items-center gap-1">
-            <span className="font-medium">Size:</span>
-            <span>{fileSize}</span>
-          </div>
-        </div>
+
+        {pageCount && <RelevancyInfo totalPages={pageCount} relevantPages={relevancyReport} />}
       </div>
     </div>
   );
