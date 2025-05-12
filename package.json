@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && npm run build:worker",
     "start": "next start",
     "build:workers": "node scripts/build-workers.js",
     "debug:worker": "node --inspect-brk app/workers/pdf-worker.js",
@@ -39,14 +39,14 @@
     "pinecone": "^0.1.0",
     "prettier": "^3.3.3",
     "react": "19.0.0",
-    "react-dom": "19.0.0"
+    "react-dom": "19.0.0",
+    "esbuild": "^0.20.0"
   },
   "devDependencies": {
     "@types/node": "22.10.2",
     "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19.0.2",
     "@types/react-dom": "19.0.2",
-    "esbuild": "^0.25.4",
     "postcss": "8.4.49",
     "tailwind-merge": "^2.5.2",
     "tailwindcss": "3.4.17",

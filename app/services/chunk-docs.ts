@@ -279,7 +279,7 @@ ${formatInstructions}
 }
 
 // Main test function
-export async function testPdfProcessing(url: string, query: string) {
+export async function processPDF(url: string, query: string) {
   console.log('🚀 Starting PDF processing test...');
   console.log('URL:', url);
   console.log('Query:', query);

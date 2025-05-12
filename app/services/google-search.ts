@@ -1,4 +1,4 @@
-import {  testPdfProcessing } from "./chunk-docs";
+import {  processPDF } from "./chunk-docs";
 
 export interface GoogleSearchResult {
   title: string;

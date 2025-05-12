@@ -1,7 +1,10 @@
 import { NextRequest } from 'next/server';
 import { StreamRequest, StreamResponse } from '@/app/types/stream';
 import { searchPDFs, GoogleSearchResult } from '@/app/services/google-search';
-import { testPdfProcessing } from '@/app/services/chunk-docs';
+import { WorkerPool } from '@/app/services/worker-pool';
+
+// Create a singleton worker pool
+const workerPool = new WorkerPool(4);
 
 export async function POST(req: NextRequest) {
   try {
@@ -43,8 +46,8 @@ export async function POST(req: NextRequest) {
         };
         await writer.write(encoder.encode(JSON.stringify(searchResultsResponse) + '\n'));
 
-        // Process each document
-        for (const link of document_links) {
+        // Process documents in parallel using worker pool
+        const processingPromises = document_links.map(async (link) => {
           try {
             // Send processing status for each document
             const processingResponse: StreamResponse = {
@@ -53,8 +56,8 @@ export async function POST(req: NextRequest) {
             };
             await writer.write(encoder.encode(JSON.stringify(processingResponse) + '\n'));
 
-            // Process the PDF and get relevancy information
-            const result = await testPdfProcessing(link, query);
+            // Process the PDF using worker pool
+            const result = await workerPool.processDocument(link, query);
             
             if (result.success) {
               // Send completion status with relevancy information
@@ -78,7 +81,6 @@ export async function POST(req: NextRequest) {
               };
               await writer.write(encoder.encode(JSON.stringify(errorResponse) + '\n'));
             }
-            // If there's an error, we'll silently skip this document
           } catch (error) {
             // Send error response for caught exceptions
             const errorResponse: StreamResponse = {
@@ -89,9 +91,11 @@ export async function POST(req: NextRequest) {
             };
             await writer.write(encoder.encode(JSON.stringify(errorResponse) + '\n'));
             console.error(`Error processing document ${link}:`, error);
-            continue;
           }
-        }
+        });
+
+        // Wait for all processing to complete
+        await Promise.all(processingPromises);
 
         // Send final completion message
         const finalResponse: StreamResponse = {
@@ -101,6 +105,7 @@ export async function POST(req: NextRequest) {
         };
         await writer.write(encoder.encode(JSON.stringify(finalResponse) + '\n'));
       } catch (error) {
+        console.error('Error in stream processing:', error);
         const errorResponse: StreamResponse = {
           status: 'error',
           message: 'Error processing documents',
@@ -120,13 +125,14 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
+    console.error('Error in stream route:', error);
     return new Response(
       JSON.stringify({
         status: 'error',
-        message: 'Invalid request body',
+        message: 'Internal server error',
         error: error instanceof Error ? error.message : 'Unknown error'
       }),
-      { status: 400 }
+      { status: 500 }
     );
   }
 } 
