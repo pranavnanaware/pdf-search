@@ -1,5 +1,5 @@
 import { parentPort, workerData } from 'worker_threads';
-import { processPDF } from '../services/chunk-docs';
+import { processPDF } from '../services/process-pdfs';
 
 if (!parentPort) {
   throw new Error('This module must be run as a worker thread');

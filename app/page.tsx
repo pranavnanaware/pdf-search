@@ -1,12 +1,9 @@
 'use client'
-import React from 'react';
-import { GradeDropdown } from '../components/GradeDropdown';
-import { SearchBar } from '../components/SearchBar';
-import { useEffect, useState } from 'react';
-import { SearchResults } from '../components/SearchResults';
-import { GoogleSearchResult } from './types/stream';
+import React, { useEffect, useState } from 'react';
 import { Grade } from '../types';
-import { StreamResponse } from './types/stream';
+import { GoogleSearchResult, StreamResponse } from './types/stream';
+import { SearchHeader } from '../components/SearchHeader';
+import { SearchResultsSection } from '../components/SearchResultsSection';
 
 export default function Home() {
   const [selectedGrade, setSelectedGrade] = useState<Grade>(Grade.ALL);
@@ -191,53 +188,23 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center w-full sm:w-3/4 max-w-full mx-auto pt-6">
-      <div className="w-full px-4 relative">
-        <h1 className="text-2xl font-semibold mb-4">PDF Search</h1>
-        {/* Search bar and grade dropdown container */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-stretch">
-            <div className="flex-1">
-              <SearchBar 
-                value={searchQuery}
-                onChange={setSearchQuery}
-                onSearch={handleSearch}
-                placeholder="Search for PDFs..."
-                history={searchHistory}
-                onSelect={handleHistorySelect}
-              />
-            </div>
-            <div className="ml-4 relative z-10 h-12">
-              <GradeDropdown value={selectedGrade} onChange={setSelectedGrade} />
-            </div>
-          </div>
-        </div>
-      </div>
+      <SearchHeader
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        selectedGrade={selectedGrade}
+        setSelectedGrade={setSelectedGrade}
+        onSearch={handleSearch}
+        searchHistory={searchHistory}
+        onHistorySelect={handleHistorySelect}
+      />
       
-      {/* Search results section */}
-      <div className="w-full px-4 my-6">
-        {isLoading && (
-          <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-2 text-gray-600">{processingStatus || 'Searching...'}</p>
-          </div>
-        )}
-        
-        {error && (
-          <div className="text-center py-4 text-red-600">
-            {error}
-          </div>
-        )}
-        
-        {!isLoading && !error && searchResults.length > 0 && (
-          <SearchResults results={searchResults} />
-        )}
-        
-        {!isLoading && !error && hasSearched && searchResults.length === 0 && (
-          <div className="text-center py-4 text-gray-600">
-            No results found. Try a different search term.
-          </div>
-        )}
-      </div>
+      <SearchResultsSection
+        isLoading={isLoading}
+        error={error}
+        hasSearched={hasSearched}
+        searchResults={searchResults}
+        processingStatus={processingStatus}
+      />
     </div>
   );
 }
