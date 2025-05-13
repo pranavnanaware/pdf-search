@@ -16,6 +16,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<{ query: string; filter: string }[]>([]);
   const [processingStatus, setProcessingStatus] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
   
   useEffect(() => {
     fetchSearchHistory();
@@ -39,6 +40,7 @@ export default function Home() {
     setError(null);
     setProcessingStatus('Searching for PDFs...');
     setSearchResults([]);
+    setHasSearched(true);
     
     try {
       const response = await fetch('/api/stream', {
@@ -230,7 +232,7 @@ export default function Home() {
           <SearchResults results={searchResults} />
         )}
         
-        {!isLoading && !error && searchResults.length === 0 && searchQuery && (
+        {!isLoading && !error && hasSearched && searchResults.length === 0 && (
           <div className="text-center py-4 text-gray-600">
             No results found. Try a different search term.
           </div>

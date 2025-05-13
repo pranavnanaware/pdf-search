@@ -5,11 +5,12 @@ import axios from 'axios';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import OpenAI from 'openai';
 import { PDFDocument } from 'pdf-lib';
-import { createClient } from '@supabase/supabase-js';
 import { StructuredOutputParser } from "langchain/output_parsers";
 import { z } from "zod";
 import * as dotenv from 'dotenv';
 import { getCachedResult, setCachedResult, closeRedisConnection } from '../../lib/redis';
+import { supabase } from '../../lib/supabase';
+import { Database } from '../../types/database.types';
 
 // Load environment variables
 dotenv.config();
@@ -21,18 +22,7 @@ console.log('Environment variables loaded:', {
   SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Not set'
 });
 
-interface ChunkRecord {
-  document_id: string;
-  page_number: number;
-  text: string;
-  embedding: number[];
-}
-
-// Initialize Supabase
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+type ChunkRecord = Database['public']['Tables']['chunks']['Insert'];
 
 // Initialize embedding & LLM clients
 const embeddings = new OpenAIEmbeddings({
@@ -166,7 +156,7 @@ async function generateEmbeddings(docs: Document[], url: string): Promise<string
     document_id,
     page_number: d.metadata.page as number,
     text: d.pageContent,
-    embedding: embsArr[i],
+    embedding: embsArr[i].toString(),
   }));
 
   // Insert chunks
@@ -193,7 +183,7 @@ async function similaritySearch(
   
     // ✏️ note: keys must match `p_query_embedding`, `p_document_id`, `p_match_count`
     const { data: matches, error } = await supabase.rpc('match_chunks', {
-      p_query_embedding: queryEmbedding,
+      p_query_embedding: queryEmbedding.toString(),
       p_document_id:     documentId,
       p_match_count:     topK
     });

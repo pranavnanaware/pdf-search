@@ -6,7 +6,8 @@
     "start": "next start",
     "build:workers": "node scripts/build-workers.js",
     "debug:worker": "node --inspect-brk app/workers/pdf-worker.js",
-    "test-pdf": "ts-node-esm scripts/test-pdf.ts"
+    "test-pdf": "ts-node-esm scripts/test-pdf.ts",
+    "generate:types": "supabase gen types typescript --project-id omrobeoxkksmkleqyelr > types/database.types.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
