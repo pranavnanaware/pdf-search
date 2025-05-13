@@ -1,6 +1,7 @@
 export interface StreamRequest {
-  document_links: string[];
   query: string;
+  document_links: string[];
+  grade?: string;
 }
 
 export interface StreamResponse {

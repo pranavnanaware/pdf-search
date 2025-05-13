@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { StreamRequest, StreamResponse } from '@/app/types/stream';
 import { searchPDFs, GoogleSearchResult } from '@/app/services/google-search';
 import { WorkerPool } from '@/app/services/worker-pool';
+import { createClient } from '../../../supabase/server';
 
 // Create a singleton worker pool
 const workerPool = new WorkerPool(4);
@@ -9,7 +10,7 @@ const workerPool = new WorkerPool(4);
 export async function POST(req: NextRequest) {
   try {
     const body: StreamRequest = await req.json();
-    const { document_links, query } = body;
+    const { document_links, query, grade } = body;
 
     if (!document_links || !Array.isArray(document_links) || !query) {
       return new Response(
@@ -20,6 +21,17 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Save search to history
+    const supabase = await createClient();
+    await supabase
+      .from('search_history')
+      .insert({ 
+        query, 
+        filter: grade || 'ALL', 
+        relevancy_calculated: false 
+      })
+      .select();
 
     // Create a new TransformStream for streaming the response
     const encoder = new TextEncoder();
@@ -36,7 +48,7 @@ export async function POST(req: NextRequest) {
         };
         await writer.write(encoder.encode(JSON.stringify(searchResponse) + '\n'));
 
-        const searchResults = await searchPDFs(query);
+        const searchResults = await searchPDFs(query, grade);
         
         // Send search results
         const searchResultsResponse: StreamResponse = {
