@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run build:worker",
+    "build": "next build && npm run build:workers",
     "start": "next start",
     "build:workers": "node scripts/build-workers.js",
     "debug:worker": "node --inspect-brk app/workers/pdf-worker.js",
